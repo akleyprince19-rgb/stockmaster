@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - StockMaster</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6fa;
+            color: #1e293b;
+        }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 250px;
+            padding: 25px 15px;
+            background: #172554;
+            color: white;
+        }
+
+        .logo {
+            padding: 15px 0 35px;
+            border-bottom: 1px solid #334477;
+            font-size: 25px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .menu-title {
+            margin: 30px 15px 12px;
+            color: #aab6d3;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .menu a {
+            display: block;
+            padding: 14px;
+            margin-bottom: 7px;
+            border-radius: 7px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .menu a:hover, .menu a.active {
+            background: #3156a5;
+        }
+
+        .main { flex: 1; min-width: 0; }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 22px 30px;
+            background: white;
+            box-shadow: 0 2px 5px #ddd;
+        }
+
+        .topbar h1 { margin: 0; color: #172554; }
+
+        .content { padding: 30px; }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px #e2e8f0;
+        }
+
+        .card h2 { color: #172554; margin-top: 0; }
+
+        label {
+            display: block;
+            margin: 15px 0 7px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #087f5b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover { background: #066649; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th { background: #f8fafc; }
+
+        .role {
+            padding: 6px 10px;
+            background: #e0e7ff;
+            color: #1e40af;
+            border-radius: 15px;
+        }
+
+        .muted { color: #64748b; }
+
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .content { padding: 15px; }
+            .card { overflow-x: auto; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="logo">StockMaster</div>
+
+        <div class="menu-title">Main Menu</div>
+
+        <nav class="menu">
+            <a href="{{ url_for('home') }}">Dashboard</a>
+            <a href="{{ url_for('pos') }}">Point of Sale</a>
+            <a href="{{ url_for('products') }}">Inventory / Products</a>
+            <a href="{{ url_for('stock') }}">Stock Management</a>
+            <a href="{{ url_for('sales') }}">Sales Management</a>
+            <a href="{{ url_for('users') }}" class="active">User Management</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <h1>User Management</h1>
+            <span>Welcome, {{ session.get('username', 'User') }}</span>
+        </header>
+
+        <section class="content">
+
+            <div class="card">
+                <h2>Create Staff Account</h2>
+                <p class="muted">Register a new member of your pharmacy staff.</p>
+
+                <form method="POST" action="{{ url_for('users') }}">
+
+                    <label>Staff Username</label>
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="Enter staff username"
+                        minlength="3"
+                        required
+                    >
+
+                    <label>Password</label>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Create password (minimum 8 characters)"
+                        minlength="8"
+                        required
+                    >
+
+                    <label>Staff Role</label>
+                    <select name="role" required>
+                        <option value="">Select staff role</option>
+                        <option value="Cashier">Cashier</option>
+                        <option value="Administrator">Administrator</option>
+                    </select>
+
+                    <button type="submit">Create Staff Account</button>
+
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Registered Staff</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                <span class="role">{{ user.role }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">No staff accounts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+
+        </section>
+    </main>
+</div>
+</body>
+</html>

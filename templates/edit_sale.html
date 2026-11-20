@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Sale #{{ sale.id }} - StockMaster</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fa; color: #1e293b; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; flex-shrink: 0; min-height: 100vh; padding: 25px 15px; background: #172554; color: white; }
+        .logo { padding: 15px 0 35px; border-bottom: 1px solid #334477; font-size: 25px; font-weight: bold; text-align: center; }
+        .menu-title { margin: 30px 15px 12px; color: #aab6d3; font-size: 12px; text-transform: uppercase; }
+        .menu a { display: block; margin-bottom: 7px; padding: 15px; border-radius: 7px; color: white; text-decoration: none; }
+        .menu a:hover, .menu a.active { background: #3156a5; }
+        .logout { margin-top: 35px; padding-top: 20px; border-top: 1px solid #334477; }
+        .logout a { color: #ffb4b4; }
+        .main { flex: 1; min-width: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 30px; background: white; box-shadow: 0 2px 5px #ddd; }
+        .topbar h1 { margin: 0; color: #172554; font-size: 22px; }
+        .user { color: #475569; }
+        .content { padding: 30px; }
+        .card { max-width: 900px; padding: 25px; border-radius: 10px; background: white; box-shadow: 0 2px 8px #e2e8f0; }
+        .card h2 { margin-top: 0; color: #172554; }
+        .flash { margin-bottom: 18px; padding: 12px 15px; border-radius: 6px; background: #fee2e2; color: #991b1b; }
+        .item-row { display: flex; align-items: end; gap: 12px; margin-bottom: 12px; }
+        .field { flex: 1; min-width: 0; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #334155; }
+        select, input { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #1e293b; font: inherit; }
+        button, .button { display: inline-block; padding: 10px 15px; border: 0; border-radius: 6px; background: #3156a5; color: white; font: inherit; text-decoration: none; cursor: pointer; }
+        .remove { background: #dc2626; }
+        .helper { color: #64748b; }
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; }
+            .topbar { padding: 18px; }
+            .content { padding: 20px; }
+            .card { padding: 18px; }
+            .item-row { align-items: stretch; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">StockMaster</div>
+            <div class="menu-title">Main Menu</div>
+            <nav class="menu">
+                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('pos') }}">Point of Sale</a>
+                <a href="{{ url_for('products') }}">Inventory / Products</a>
+                <a href="{{ url_for('stock') }}">Stock Management</a>
+                <a href="{{ url_for('sales') }}" class="active">Sales Management</a>
+            </nav>
+            <div class="logout"><nav class="menu"><a href="{{ url_for('logout') }}">Logout</a></nav></div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <h1>Edit Sale #{{ sale.id }}</h1>
+                <div class="user">Welcome, {{ session.get('username', 'User') }}</div>
+            </header>
+
+            <section class="content">
+                {% for category, message in get_flashed_messages(with_categories=true) %}
+                <div class="flash {{ category }}" role="alert">{{ message }}</div>
+                {% endfor %}
+
+                <div class="card">
+                    <h2>Sale Items</h2>
+                    <form method="POST" action="{{ url_for('edit_sale', sale_id=sale.id) }}">
+                        <div id="saleItems">
+                            {% for item in items %}
+                            <div class="item-row">
+                                <div class="field">
+                                    <label>Medicine</label>
+                                    <select name="product_id" required>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}"
+                                            {% if product.id == item.product_id %}selected{% endif %}>
+                                            {{ product.name }} - {{ product.code }}
+                                            ({{ product.quantity }} in stock)
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Quantity</label>
+                                    <input name="quantity" type="number" min="1" step="1"
+                                           value="{{ item.quantity }}" required>
+                                </div>
+                                <button class="remove" type="button"
+                                        onclick="this.closest('.item-row').remove()">Remove</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <template id="saleItemTemplate">
+                            <div class="item-row">
+                                <div class="field">
+                                    <label>Medicine</label>
+                                    <select name="product_id" required>
+                                        <option value="" selected disabled>Select a medicine</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}">
+                                            {{ product.name }} - {{ product.code }}
+                                            ({{ product.quantity }} in stock)
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Quantity</label>
+                                    <input name="quantity" type="number" min="1" step="1" value="1" required>
+                                </div>
+                                <button class="remove" type="button"
+                                        onclick="this.closest('.item-row').remove()">Remove</button>
+                            </div>
+                        </template>
+
+                        <button type="button" id="addSaleItem">Add Medicine</button>
+
+                        <div class="field" style="max-width: 360px; margin-top: 18px;">
+                            <label for="paymentMethod">Payment Method</label>
+                            <select id="paymentMethod" name="payment_method" required>
+                                <option value="Cash" {% if sale.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+                                <option value="Mobile Money" {% if sale.payment_method == 'Mobile Money' %}selected{% endif %}>Mobile Money</option>
+                                <option value="Card" {% if sale.payment_method == 'Card' %}selected{% endif %}>Card</option>
+                            </select>
+                        </div>
+                        <p class="helper">The total is recalculated from current product prices. Inventory is adjusted for quantity changes.</p>
+                        <button type="submit">Save Changes</button>
+                        <a class="button" href="{{ url_for('sale_detail', sale_id=sale.id) }}">Cancel</a>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        document.getElementById("addSaleItem").addEventListener("click", () => {
+            const template = document.getElementById("saleItemTemplate");
+            document.getElementById("saleItems").appendChild(
+                template.content.firstElementChild.cloneNode(true)
+            );
+        });
+
+        if (document.querySelectorAll("#saleItems .item-row").length === 0) {
+            document.getElementById("addSaleItem").click();
+        }
+    </script>
+</body>
+</html>

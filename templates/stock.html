@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management - StockMaster</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6fa;
+            color: #1e293b;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            min-height: 100vh;
+            padding: 25px 15px;
+            background: #172554;
+            color: white;
+        }
+
+        .logo {
+            padding: 15px 0 35px;
+            border-bottom: 1px solid #334477;
+            font-size: 25px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .menu-title {
+            margin: 30px 15px 12px;
+            color: #aab6d3;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .menu a {
+            display: block;
+            margin-bottom: 7px;
+            padding: 15px;
+            border-radius: 7px;
+            color: white;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .menu a:hover,
+        .menu a.active {
+            background: #3156a5;
+        }
+
+        .logout {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #334477;
+        }
+
+        .logout a {
+            color: #ffb4b4;
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 30px;
+            background: white;
+            box-shadow: 0 2px 5px #ddd;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            color: #172554;
+            font-size: 22px;
+        }
+
+        .user {
+            color: #475569;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .stock-card {
+            max-width: 700px;
+            padding: 25px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 8px #e2e8f0;
+        }
+
+        .stock-card h2 {
+            margin-top: 0;
+            color: #172554;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+            color: #334155;
+            font-weight: bold;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 6px;
+            background: #3156a5;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #244488;
+        }
+
+        @media (max-width: 700px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+
+            .topbar {
+                gap: 12px;
+                padding: 18px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .stock-card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">StockMaster</div>
+            <div class="menu-title">Main Menu</div>
+            <nav class="menu">
+                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('pos') }}">Point of Sale</a>
+                <a href="{{ url_for('products') }}">Inventory / Products</a>
+                <a href="{{ url_for('stock') }}" class="active" aria-current="page">Stock Management</a>
+                <a href="{{ url_for('sales') }}">Sales Management</a>
+            </nav>
+            <div class="logout">
+                <nav class="menu">
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <h1>Stock Management</h1>
+                <div class="user">Welcome, {{ session.get('username', 'User') }}</div>
+            </header>
+
+            <section class="content">
+                <div class="stock-card">
+                    <h2>Add Stock</h2>
+                    <form method="POST" action="{{ url_for('stock') }}">
+                        <label for="product_id">Product</label>
+                        <select id="product_id" name="product_id" required>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">
+                                {{ product.name }} - {{ product.code }}
+                            </option>
+                            {% else %}
+                            <option value="" disabled>No products available</option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="quantity">Quantity to Add</label>
+                        <input id="quantity" type="number" name="quantity"
+                               min="1" step="1" required>
+
+                        <button type="submit">Add Stock</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StockMaster - Point of Sale</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            padding: 25px;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        input, button {
+            padding: 12px;
+            margin: 7px 0;
+            font-size: 15px;
+        }
+
+        input {
+            width: 95%;
+        }
+
+        button {
+            border: none;
+            border-radius: 5px;
+            background: #087f5b;
+            color: white;
+            cursor: pointer;
+        }
+
+        .remove {
+            background: #dc3545;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .total {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #completeButton {
+            width: 100%;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Point of Sale</h2>
+
+    <label>Search Medicine</label>
+    <input
+        type="text"
+        id="medicineInput"
+        list="medicineList"
+        placeholder="Enter medicine name or code"
+    >
+
+    <datalist id="medicineList">
+        {% for product in products %}
+        <option
+            value="{{ product['name'] }} - {{ product['code'] }}"
+            data-product-id="{{ product['id'] }}"
+            data-product-name="{{ product['name'] }}"
+            data-product-code="{{ product['code'] }}"
+            data-product-quantity="{{ product['quantity'] }}"
+            data-product-price="{{ product['price'] }}">
+        </option>
+        {% endfor %}
+    </datalist>
+
+    <button onclick="addMedicine()">Add Medicine</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="cartBody"></tbody>
+    </table>
+
+    <div class="total">
+        Total: GH₵ <span id="totalAmount">0.00</span>
+    </div>
+
+    <button id="completeButton" onclick="completePayment()">
+        Complete Payment
+    </button>
+</div>
+
+<script>
+    const products = Array.from(
+        document.querySelectorAll("#medicineList option"),
+        option => ({
+            id: Number(option.dataset.productId),
+            name: option.dataset.productName,
+            code: option.dataset.productCode,
+            quantity: Number(option.dataset.productQuantity),
+            price: Number(option.dataset.productPrice)
+        })
+    );
+
+    let cart = [];
+
+    function addMedicine() {
+        const input = document.getElementById("medicineInput");
+        const search = input.value.trim().toLowerCase();
+
+        const product = products.find(p =>
+            `${p.name} - ${p.code}`.toLowerCase() === search ||
+            p.name.toLowerCase() === search ||
+            p.code.toLowerCase() === search
+        );
+
+        if (!product) {
+            alert("Please select a medicine from the list.");
+            return;
+        }
+
+        const existing = cart.find(item => item.id === product.id);
+
+        if (existing) {
+            if (existing.quantity >= product.quantity) {
+                alert("Not enough stock available.");
+                return;
+            }
+            existing.quantity++;
+        } else {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                code: product.code,
+                price: product.price,
+                quantity: 1,
+                available: product.quantity
+            });
+        }
+
+        input.value = "";
+        displayCart();
+    }
+
+    document.getElementById("medicineInput").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            addMedicine();
+        }
+    });
+
+    function removeMedicine(index) {
+        cart.splice(index, 1);
+        displayCart();
+    }
+
+    function displayCart() {
+        const cartBody = document.getElementById("cartBody");
+        cartBody.innerHTML = "";
+
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+
+            cartBody.innerHTML += `
+                <tr>
+                    <td>${escapeHTML(item.name)}</td>
+                    <td>${item.quantity}</td>
+                    <td>GH₵ ${item.price.toFixed(2)}</td>
+                    <td>GH₵ ${subtotal.toFixed(2)}</td>
+                    <td>
+                        <button class="remove" onclick="removeMedicine(${index})">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("totalAmount").textContent = total.toFixed(2);
+    }
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[char]);
+    }
+
+    async function completePayment() {
+        if (cart.length === 0) {
+            alert("Please add a medicine first.");
+            return;
+        }
+
+        const button = document.getElementById("completeButton");
+        button.disabled = true;
+        button.textContent = "Processing...";
+
+        try {
+            const response = await fetch("/complete-sale", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    cart: cart.map(item => ({
+                        id: item.id,
+                        quantity: item.quantity
+                    }))
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                alert(result.message || "Payment could not be completed.");
+                return;
+            }
+
+            alert("Payment completed successfully!");
+            cart = [];
+            displayCart();
+            window.location.reload();
+
+        } catch (error) {
+            alert("Something went wrong. Please try again.");
+        } finally {
+            button.disabled = false;
+            button.textContent = "Complete Payment";
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sale #{{ sale.id }} - StockMaster</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fa; color: #1e293b; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; flex-shrink: 0; min-height: 100vh; padding: 25px 15px; background: #172554; color: white; }
+        .logo { padding: 15px 0 35px; border-bottom: 1px solid #334477; font-size: 25px; font-weight: bold; text-align: center; }
+        .menu-title { margin: 30px 15px 12px; color: #aab6d3; font-size: 12px; text-transform: uppercase; }
+        .menu a { display: block; margin-bottom: 7px; padding: 15px; border-radius: 7px; color: white; text-decoration: none; }
+        .menu a:hover, .menu a.active { background: #3156a5; }
+        .logout { margin-top: 35px; padding-top: 20px; border-top: 1px solid #334477; }
+        .logout a { color: #ffb4b4; }
+        .main { flex: 1; min-width: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 30px; background: white; box-shadow: 0 2px 5px #ddd; }
+        .topbar h1 { margin: 0; color: #172554; font-size: 22px; }
+        .user { color: #475569; }
+        .content { padding: 30px; }
+        .card { margin-bottom: 20px; padding: 25px; border-radius: 10px; background: white; box-shadow: 0 2px 8px #e2e8f0; }
+        .card h2 { margin-top: 0; color: #172554; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; }
+        .summary p { margin: 5px 0; }
+        .muted { color: #64748b; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 13px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { background: #f8fafc; color: #334155; }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .button { display: inline-block; padding: 10px 15px; border: 0; border-radius: 6px; background: #3156a5; color: white; text-decoration: none; font: inherit; cursor: pointer; }
+        .danger { background: #dc2626; }
+        .warning { color: #92400e; }
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; }
+            .topbar { padding: 18px; }
+            .content { padding: 20px; }
+            .card { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">StockMaster</div>
+            <div class="menu-title">Main Menu</div>
+            <nav class="menu">
+                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('pos') }}">Point of Sale</a>
+                <a href="{{ url_for('products') }}">Inventory / Products</a>
+                <a href="{{ url_for('stock') }}">Stock Management</a>
+                <a href="{{ url_for('sales') }}" class="active">Sales Management</a>
+            </nav>
+            <div class="logout">
+                <nav class="menu"><a href="{{ url_for('logout') }}">Logout</a></nav>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <h1>Sale #{{ sale.id }}</h1>
+                <div class="user">Welcome, {{ session.get('username', 'User') }}</div>
+            </header>
+
+            <section class="content">
+                <div class="card">
+                    <h2>Sale Details</h2>
+                    <div class="summary">
+                        <p><span class="muted">Date</span><br>{{ sale.sale_date }}</p>
+                        <p><span class="muted">Payment method</span><br>{{ sale.payment_method }}</p>
+                        <p><span class="muted">Cashier</span><br>{{ sale.cashier or '' }}</p>
+                        <p><span class="muted">Total paid</span><br>GH₵ {{ '%.2f'|format(sale.total_amount) }}</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Medicines in this sale</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Medicine</th>
+                                    <th>Code</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.product_name }}</td>
+                                    <td>{{ item.product_code }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>GH₵ {{ '%.2f'|format(item.unit_price) }}</td>
+                                    <td>GH₵ {{ '%.2f'|format(item.subtotal) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5">No item details found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Choose an action</h2>
+                    <div class="actions">
+                        <a class="button" href="{{ url_for('edit_sale', sale_id=sale.id) }}">Edit / Update Sale</a>
+                        <form method="POST" action="{{ url_for('delete_sale', sale_id=sale.id) }}"
+                              onsubmit="return confirm('Delete this sale? Inventory will not be restored.');">
+                            <button class="button danger" type="submit">Delete Sale</button>
+                        </form>
+                        <a class="button" href="{{ url_for('sales') }}">Back to Sales</a>
+                    </div>
+                    <span class="warning">Deleting a sale does not restore sold stock.</span>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

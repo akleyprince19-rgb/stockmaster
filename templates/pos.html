@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockMaster - Point of Sale</title>
+    {% include 'pwa_meta.html' %}
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 25px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .header a {
+            background: #475569;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        .panel {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            padding: 11px 18px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .remove {
+            background: #dc2626;
+        }
+
+        .payment-button {
+            background: #16a34a;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        .total {
+            font-size: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        @media(max-width: 650px) {
+            body {
+                padding: 12px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h1>StockMaster POS</h1>
+            <p>Point of Sale Management</p>
+        </div>
+
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <div class="panel">
+        <h2>Search Medicine</h2>
+
+        <input
+            type="text"
+            id="search"
+            list="medicineList"
+            placeholder="Enter medicine name or product code"
+        >
+
+        <datalist id="medicineList">
+            {% for product in products %}
+                <option value="{{ product['name'] }} - {{ product['code'] }}"
+                        data-product-id="{{ product['id'] }}"
+                        data-product-name="{{ product['name'] }}"
+                        data-product-code="{{ product['code'] }}"
+                        data-product-quantity="{{ product['quantity'] }}"
+                        data-product-price="{{ product['price'] }}"></option>
+            {% endfor %}
+        </datalist>
+
+        <button onclick="addToCart()">Add to Queue</button>
+    </div>
+
+    <div class="panel">
+        <h2>Shopping Cart</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="cartItems">
+                <tr>
+                    <td colspan="5">No medicines added yet.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total">
+            Total: GH₵ <span id="grandTotal">0.00</span>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Payment Details</h2>
+
+        <label for="paymentMethod">Payment Method</label>
+        <select id="paymentMethod">
+            <option value="Cash">Cash</option>
+            <option value="Mobile Money">Mobile Money</option>
+            <option value="Card">Card</option>
+        </select>
+
+        <button class="payment-button" onclick="completePayment()">
+            Complete Payment
+        </button>
+    </div>
+
+</div>
+
+<script>
+    const products = Array.from(
+        document.querySelectorAll("#medicineList option"),
+        option => ({
+            id: Number(option.dataset.productId),
+            name: option.dataset.productName,
+            code: option.dataset.productCode,
+            quantity: Number(option.dataset.productQuantity),
+            price: Number(option.dataset.productPrice)
+        })
+    );
+
+    let cart = [];
+
+    function addToCart() {
+        const searchValue =
+            document.getElementById("search").value.trim().toLowerCase();
+
+        const product = products.find(p =>
+            (p.name + " - " + p.code).toLowerCase() === searchValue ||
+            p.name.toLowerCase() === searchValue ||
+            p.code.toLowerCase() === searchValue
+        );
+
+        if (!product) {
+            alert("Medicine not found. Select a valid medicine.");
+            return;
+        }
+
+        const quantity = Number(
+            prompt("Enter quantity:")
+        );
+
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+            alert("Enter a valid quantity.");
+            return;
+        }
+
+        const existing = cart.find(item => item.id === product.id);
+
+        const alreadyQueued = existing ? existing.quantity : 0;
+
+        if (alreadyQueued + quantity > product.quantity) {
+            alert("Insufficient stock available.");
+            return;
+        }
+
+        if (existing) {
+            existing.quantity += quantity;
+        } else {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                code: product.code,
+                price: Number(product.price),
+                quantity: quantity
+            });
+        }
+
+        document.getElementById("search").value = "";
+
+        displayCart();
+    }
+
+    document.getElementById("search").addEventListener(
+        "keydown",
+        function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addToCart();
+            }
+        }
+    );
+
+    function displayCart() {
+        const cartItems = document.getElementById("cartItems");
+
+        cartItems.innerHTML = "";
+
+        let total = 0;
+
+        if (cart.length === 0) {
+            cartItems.innerHTML =
+                '<tr><td colspan="5">No medicines added yet.</td></tr>';
+        }
+
+        cart.forEach((item, index) => {
+            const subtotal = item.price * item.quantity;
+
+            total += subtotal;
+
+            cartItems.innerHTML += `
+                <tr>
+                    <td>${escapeHTML(item.name)}</td>
+                    <td>GH₵ ${item.price.toFixed(2)}</td>
+                    <td>${item.quantity}</td>
+                    <td>GH₵ ${subtotal.toFixed(2)}</td>
+                    <td>
+                        <button class="remove"
+                            onclick="removeItem(${index})">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("grandTotal").textContent =
+            total.toFixed(2);
+    }
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[character]);
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        displayCart();
+    }
+
+    function completePayment() {
+        if (cart.length === 0) {
+            alert("Your cart is empty.");
+            return;
+        }
+
+        const button = document.querySelector(".payment-button");
+        button.disabled = true;
+        button.textContent = "Processing...";
+
+        fetch("/complete-sale", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                payment_method: document.getElementById("paymentMethod").value,
+                cart: cart.map(item => ({
+                    id: item.id,
+                    quantity: item.quantity
+                }))
+            })
+        })
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "Payment could not be completed.");
+                }
+
+                alert(`Payment completed. Total: GH₵ ${result.total.toFixed(2)}`);
+                cart = [];
+                displayCart();
+                window.location.reload();
+            })
+            .catch(error => {
+                alert(error.message || "Payment could not be completed. Please try again.");
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = "Complete Payment";
+            });
+    }
+</script>
+
+</body>
+</html>
