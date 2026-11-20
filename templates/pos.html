@@ -40,6 +40,11 @@
             text-decoration: none;
         }
 
+        .header div:last-child {
+            display: flex;
+            gap: 10px;
+        }
+
         .panel {
             background: white;
             padding: 22px;
@@ -125,7 +130,12 @@
             <p>Point of Sale Management</p>
         </div>
 
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <div>
+            {% if session.get('role') == 'Administrator' %}
+                <a href="{{ url_for('home') }}">Dashboard</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
     </div>
 
     <div class="panel">

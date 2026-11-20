@@ -96,6 +96,18 @@ def create_table():
         )
     ''')
 
+    # Suppliers table
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS suppliers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            contact_person TEXT,
+            phone TEXT,
+            email TEXT,
+            address TEXT
+        )
+    ''')
+
     # Create first administrator if one doesn't exist
     admin = conn.execute(
         'SELECT id FROM users WHERE username = ?',
@@ -742,6 +754,129 @@ def delete_sale(sale_id):
     return redirect(url_for('sales'))
 
 
+@app.route('/suppliers', methods=['GET', 'POST'])
+@admin_required
+def suppliers():
+    conn = get_db_connection()
+    try:
+        if request.method == 'POST':
+            name = request.form.get('name', '').strip()
+            if not name:
+                flash('Supplier name is required.', 'error')
+            else:
+                conn.execute(
+                    '''
+                    INSERT INTO suppliers
+                        (name, contact_person, phone, email, address)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''',
+                    (
+                        name,
+                        request.form.get('contact_person', '').strip(),
+                        request.form.get('phone', '').strip(),
+                        request.form.get('email', '').strip(),
+                        request.form.get('address', '').strip(),
+                    ),
+                )
+                conn.commit()
+                flash('Supplier added successfully.', 'success')
+                return redirect(url_for('suppliers'))
+
+        supplier_list = conn.execute(
+            'SELECT * FROM suppliers ORDER BY name ASC'
+        ).fetchall()
+        return render_template('suppliers.html', suppliers=supplier_list)
+    finally:
+        conn.close()
+
+
+@app.post('/suppliers/<int:supplier_id>/delete')
+@admin_required
+def delete_supplier(supplier_id):
+    conn = get_db_connection()
+    try:
+        with conn:
+            result = conn.execute(
+                'DELETE FROM suppliers WHERE id = ?', (supplier_id,)
+            )
+            if result.rowcount == 0:
+                abort(404)
+    finally:
+        conn.close()
+
+    flash('Supplier deleted.', 'success')
+    return redirect(url_for('suppliers'))
+
+
+@app.route('/reports')
+@admin_required
+def reports():
+    conn = get_db_connection()
+    try:
+        summary = conn.execute(
+            '''
+            SELECT
+                COALESCE(COUNT(*), 0) AS sales_count,
+                COALESCE(SUM(total_amount), 0) AS total_sales,
+                COALESCE(SUM(amount_paid), 0) AS amount_paid,
+                COALESCE(SUM(change_amount), 0) AS change_given
+            FROM sales
+            '''
+        ).fetchone()
+
+        payment_totals = conn.execute(
+            '''
+            SELECT payment_method,
+                   COUNT(*) AS sales_count,
+                   COALESCE(SUM(total_amount), 0) AS total_amount
+            FROM sales
+            GROUP BY payment_method
+            ORDER BY total_amount DESC
+            '''
+        ).fetchall()
+
+        top_products = conn.execute(
+            '''
+            SELECT product_name, product_code,
+                   SUM(quantity) AS quantity_sold,
+                   SUM(subtotal) AS revenue
+            FROM sale_items
+            GROUP BY product_id, product_name, product_code
+            ORDER BY quantity_sold DESC
+            LIMIT 10
+            '''
+        ).fetchall()
+
+        low_stock = conn.execute(
+            '''
+            SELECT name, code, quantity
+            FROM products
+            WHERE quantity <= 5
+            ORDER BY quantity ASC, name ASC
+            '''
+        ).fetchall()
+
+        recent_sales = conn.execute(
+            '''
+            SELECT id, total_amount, payment_method, cashier, sale_date
+            FROM sales
+            ORDER BY sale_date DESC, id DESC
+            LIMIT 20
+            '''
+        ).fetchall()
+    finally:
+        conn.close()
+
+    return render_template(
+        'reports.html',
+        summary=summary,
+        payment_totals=payment_totals,
+        top_products=top_products,
+        low_stock=low_stock,
+        recent_sales=recent_sales,
+    )
+
+
 @app.route('/users', methods=['GET', 'POST'])
 @admin_required
 def users():
@@ -821,3 +956,4 @@ create_table()
 # Start application locally
 if __name__ == '__main__':
     app.run(debug=False)
+    
