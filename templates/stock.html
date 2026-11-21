@@ -175,15 +175,15 @@
             <div class="logo">StockMaster</div>
             <div class="menu-title">Main Menu</div>
             <nav class="menu">
-                <a href="{{ url_for('home') }}">Dashboard</a>
-                <a href="{{ url_for('pos') }}">Point of Sale</a>
-                <a href="{{ url_for('products') }}">Inventory / Products</a>
-                <a href="{{ url_for('stock') }}" class="active" aria-current="page">Stock Management</a>
-                <a href="{{ url_for('sales') }}">Sales Management</a>
+                <a href="{{ url_for('home') }}"><span aria-hidden="true">🏠</span> Dashboard</a>
+                <a href="{{ url_for('pos') }}"><span aria-hidden="true">🛒</span> Point of Sale</a>
+                <a href="{{ url_for('products') }}"><span aria-hidden="true">💊</span> Inventory / Products</a>
+                <a href="{{ url_for('stock') }}" class="active" aria-current="page"><span aria-hidden="true">📦</span> Stock Management</a>
+                <a href="{{ url_for('sales') }}"><span aria-hidden="true">📈</span> Sales Management</a>
             </nav>
             <div class="logout">
                 <nav class="menu">
-                    <a href="{{ url_for('logout') }}">Logout</a>
+                    <a href="{{ url_for('logout') }}"><span aria-hidden="true">↪</span> Logout</a>
                 </nav>
             </div>
         </aside>

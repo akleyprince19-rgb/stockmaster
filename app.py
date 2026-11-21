@@ -30,6 +30,25 @@ def get_db_connection():
     return conn
 
 
+def generate_product_code(conn):
+    row = conn.execute(
+        "SELECT code FROM products WHERE code LIKE 'SM-%' ORDER BY id DESC"
+    ).fetchone()
+    number = 1
+    if row:
+        suffix = row['code'].replace('SM-', '', 1)
+        if suffix.isdigit():
+            number = int(suffix) + 1
+
+    while conn.execute(
+        'SELECT id FROM products WHERE code = ?',
+        (f'SM-{number:06d}',),
+    ).fetchone():
+        number += 1
+
+    return f'SM-{number:06d}'
+
+
 # Create database tables
 def create_table():
     conn = get_db_connection()
@@ -44,6 +63,15 @@ def create_table():
             price REAL NOT NULL
         )
     ''')
+
+    product_columns = {
+        row['name']
+        for row in conn.execute('PRAGMA table_info(products)').fetchall()
+    }
+    if 'cost_price' not in product_columns:
+        conn.execute(
+            'ALTER TABLE products ADD COLUMN cost_price REAL NOT NULL DEFAULT 0'
+        )
 
     # Stock history table
     conn.execute('''
@@ -215,15 +243,16 @@ def products():
     if request.method == 'POST':
 
         name = request.form['name']
-        code = request.form['code']
         quantity = request.form['quantity']
         price = request.form['price']
+        cost_price = request.form['cost_price']
+        code = generate_product_code(conn)
 
         try:
             conn.execute('''
-                INSERT INTO products (name, code, quantity, price)
-                VALUES (?, ?, ?, ?)
-            ''', (name, code, quantity, price))
+                INSERT INTO products (name, code, quantity, cost_price, price)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (name, code, quantity, cost_price, price))
 
             conn.commit()
 
@@ -257,12 +286,12 @@ def edit_product(id):
 
         conn.execute('''
             UPDATE products
-            SET name = ?, code = ?, quantity = ?, price = ?
+            SET name = ?, quantity = ?, cost_price = ?, price = ?
             WHERE id = ?
         ''', (
             request.form['name'],
-            request.form['code'],
             request.form['quantity'],
+            request.form['cost_price'],
             request.form['price'],
             id
         ))

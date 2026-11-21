@@ -253,15 +253,15 @@
         <div class="logo">StockMaster</div>
         <div class="menu-title">Main Menu</div>
         <nav class="menu">
-            <a href="{{ url_for('home') }}">Dashboard</a>
-            <a href="{{ url_for('pos') }}">Point of Sale</a>
-            <a href="{{ url_for('products') }}" class="active" aria-current="page">Inventory / Products</a>
-            <a href="{{ url_for('stock') }}">Stock Management</a>
-            <a href="{{ url_for('sales') }}">Sales Management</a>
+            <a href="{{ url_for('home') }}"><span aria-hidden="true">🏠</span> Dashboard</a>
+            <a href="{{ url_for('pos') }}"><span aria-hidden="true">🛒</span> Point of Sale</a>
+            <a href="{{ url_for('products') }}" class="active" aria-current="page"><span aria-hidden="true">💊</span> Inventory / Products</a>
+            <a href="{{ url_for('stock') }}"><span aria-hidden="true">📦</span> Stock Management</a>
+            <a href="{{ url_for('sales') }}"><span aria-hidden="true">📈</span> Sales Management</a>
         </nav>
         <div class="logout">
             <nav class="menu">
-                <a href="{{ url_for('logout') }}">Logout</a>
+                <a href="{{ url_for('logout') }}"><span aria-hidden="true">↪</span> Logout</a>
             </nav>
         </div>
     </aside>
@@ -283,14 +283,15 @@
         <input type="text" name="name"
                placeholder="Product Name" required>
 
-        <input type="text" name="code"
-               placeholder="Product Code" required>
-
         <input type="number" name="quantity"
                placeholder="Quantity" min="0" required>
 
+        <input type="number" name="cost_price"
+               placeholder="Cost Price" min="0"
+               step="0.01" required>
+
         <input type="number" name="price"
-               placeholder="Unit Price" min="0"
+               placeholder="Selling Price" min="0"
                step="0.01" required>
 
         <button type="submit" class="add-btn">
@@ -313,7 +314,9 @@
                 <th>Product Name</th>
                 <th>Product Code</th>
                 <th>Quantity</th>
-                <th>Price</th>
+                <th>Cost Price</th>
+                <th>Selling Price</th>
+                <th>Profit per Unit</th>
             </tr>
         </thead>
 
@@ -329,13 +332,15 @@
                 <td>{{ product.name }}</td>
                 <td>{{ product.code }}</td>
                 <td>{{ product.quantity }}</td>
-                <td>GH₵ {{ product.price }}</td>
+                <td>GH₵ {{ "%.2f"|format(product.cost_price) }}</td>
+                <td>GH₵ {{ "%.2f"|format(product.price) }}</td>
+                <td>GH₵ {{ "%.2f"|format(product.price - product.cost_price) }}</td>
             </tr>
 
             {% else %}
 
             <tr>
-                <td colspan="5">No products available yet.</td>
+                <td colspan="7">No products available yet.</td>
             </tr>
 
             {% endfor %}

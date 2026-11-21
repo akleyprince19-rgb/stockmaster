@@ -126,15 +126,15 @@
 
     <div class="header">
         <div>
-            <h1>StockMaster POS</h1>
+            <h1><span aria-hidden="true">🛒</span> StockMaster POS</h1>
             <p>Point of Sale Management</p>
         </div>
 
         <div>
             {% if session.get('role') == 'Administrator' %}
-                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('home') }}"><span aria-hidden="true">🏠</span> Dashboard</a>
             {% endif %}
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}"><span aria-hidden="true">↪</span> Logout</a>
         </div>
     </div>
 

@@ -1,36 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - StockMaster</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 32px 16px;
+            display: grid;
+            place-items: center;
+            font-family: Arial, sans-serif;
+            color: #1e293b;
+            background: #f4f6fa;
+        }
+
+        .edit-card {
+            width: min(100%, 520px);
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px #dbe3ef;
+        }
+
+        h1 {
+            margin: 0 0 24px;
+            color: #172554;
+        }
+
+        label {
+            display: block;
+            margin: 16px 0 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            color: #1e293b;
+            font: inherit;
+        }
+
+        input[readonly] {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        button, .back-link {
+            display: inline-block;
+            margin-top: 22px;
+            padding: 11px 16px;
+            border: 0;
+            border-radius: 6px;
+            background: #3156a5;
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .back-link {
+            margin-left: 8px;
+            background: #475569;
+        }
+
+        button:hover, .back-link:hover {
+            filter: brightness(0.92);
+        }
+    </style>
 </head>
 <body>
 
+<main class="edit-card">
     <h1>Edit Product</h1>
 
     <form method="POST">
 
-        <label>Product Name:</label>
-        <input type="text" name="name" value="{{ product.name }}" required>
-        <br><br>
+        <label for="name">Product Name</label>
+        <input id="name" type="text" name="name" value="{{ product.name }}" required>
 
-        <label>Product Code:</label>
-        <input type="text" name="code" value="{{ product.code }}" required>
-        <br><br>
+        <label for="code">Product Code</label>
+        <input id="code" type="text" value="{{ product.code }}" readonly>
 
-        <label>Quantity:</label>
-        <input type="number" name="quantity" value="{{ product.quantity }}" required>
-        <br><br>
+        <label for="quantity">Quantity</label>
+        <input id="quantity" type="number" name="quantity" value="{{ product.quantity }}" required>
 
-        <label>Unit Price:</label>
-        <input type="number" step="0.01" name="price" value="{{ product.price }}" required>
-        <br><br>
+        <label for="cost_price">Cost Price</label>
+        <input id="cost_price" type="number" step="0.01" name="cost_price" value="{{ product.cost_price }}" required>
+
+        <label for="price">Selling Price</label>
+        <input id="price" type="number" step="0.01" name="price" value="{{ product.price }}" required>
 
         <button type="submit">Update Product</button>
-
+        <a class="back-link" href="{{ url_for('products') }}"><span aria-hidden="true">💊</span> Back to Products</a>
     </form>
-
-    <br>
-    <a href="/products">Back to Products</a>
-
+</main>
 </body>
 </html>
